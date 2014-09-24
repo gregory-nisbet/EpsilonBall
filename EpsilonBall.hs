@@ -18,6 +18,17 @@ a *| b = PseudoReal {approx = approxer} where
   pairs = [ approxMul i a b | i <- epses ]
   approxer e = fst $ head $ dropWhile (\pair -> snd pair > e) pairs
 
+instance Num PseudoReal where
+  (+) = (+|)
+  (*) = (*|)
+  negate = scalarMul (-1)
+  signum x = undefined
+  abs x = undefined
+  fromInteger = newPseudoReal . fromInteger
+
+
+
+
 approxMul :: Rational -> PseudoReal -> PseudoReal -> (Rational, Rational)
 approxMul e x y = 
   let xe = approx x e in
