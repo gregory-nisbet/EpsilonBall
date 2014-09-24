@@ -1,26 +1,51 @@
 import Data.Ratio (Rational)
 
-newtype Real = Real {approx :: Rational -> Rational}
+data PseudoReal = PseudoReal {approx :: Rational -> Rational}
 
-fromRational :: Rational -> Real
-fromRational x = Real (const x)
+newPseudoReal :: Rational -> PseudoReal
+newPseudoReal x = PseudoReal (const x)
 
-(+|) :: Real -> Real -> Real
-a +| b = Real (\x -> approx a (x/2) + approx b (x/2))
+(+|) :: PseudoReal -> PseudoReal -> PseudoReal
+a +| b = PseudoReal (\x -> approx a (x/2) + approx b (x/2))
 
-scalarMul :: (Rational -> Real -> Real) 
-scalar 0 _ = fromRational $ fromInteger 0
-scalar c x = Real (\ eps -> c * approx x (eps/ abs c))
+scalarMul :: (Rational -> PseudoReal -> PseudoReal) 
+scalarMul 0 _ = newPseudoReal $ fromInteger 0
+scalarMul c x = PseudoReal (\ eps -> c * approx x (eps/ abs c))
 
-(*|) :: Real -> Real -> Real
-a *| b = Real (approx = approxer) where
+(*|) :: PseudoReal -> PseudoReal -> PseudoReal
+a *| b = PseudoReal {approx = approxer} where
   epses = [(1/2) ^ n | n <- [1 ..]]
   pairs = [ approxMul i a b | i <- epses ]
-  approxer e = fst $ head $ dropWhile (\pair -> snd pair> e) pairs
+  approxer e = fst $ head $ dropWhile (\pair -> snd pair > e) pairs
 
-approxMul :: Rational -> Real -> Real -> (Rational, Rational)
+approxMul :: Rational -> PseudoReal -> PseudoReal -> (Rational, Rational)
 approxMul e x y = 
   let xe = approx x e in
   let ye = approx y e in
   ( xe * ye, e * (abs xe + abs ye + e) )
+
+data GenCF = GenCF {a :: Integer -> Integer, b :: Integer -> Integer}
+
+(//) :: Integer -> Integer -> Rational
+a // b = fromInteger a / fromInteger b
+
+generalizedCF :: GenCF -> Integer -> Rational
+generalizedCF gen i 
+  | i < 0 = undefined
+  | otherwise= aa i // bb i where
+    aa (-1) = 1
+    aa 0 = (b gen 0)
+    aa num = (b gen (n+1)) * aa n + (a gen (n+1)) * aa (n-1) where 
+      n = num - 1
+
+    bb (-1) = 0
+    bb 0 = 1
+    bb num = (b gen (n+1)) * bb n + (a gen (n+1)) * bb (n-1) where
+      n = num - 1
+
+root2 = GenCF {a = const 1, b = (\x -> if x == 0 then 1 else 2)}
+
+fib = GenCF {a = const 1, b = const 1}
+
+
 
