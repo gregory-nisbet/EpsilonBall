@@ -1,4 +1,5 @@
 import Data.Ratio (Rational)
+import qualified Data.Map as Map
 
 data PseudoReal = PseudoReal {approx :: Rational -> Rational}
 
@@ -27,8 +28,6 @@ instance Num PseudoReal where
   fromInteger = newPseudoReal . fromInteger
 
 
-
-
 approxMul :: Rational -> PseudoReal -> PseudoReal -> (Rational, Rational)
 approxMul e x y = 
   let xe = approx x e in
@@ -40,23 +39,6 @@ data GenCF = GenCF {a :: Integer -> Integer, b :: Integer -> Integer}
 (//) :: Integer -> Integer -> Rational
 a // b = fromInteger a / fromInteger b
 
-generalizedCF :: GenCF -> Integer -> Rational
-generalizedCF gen i 
-  | i < 0 = undefined
-  | otherwise= aa i // bb i where
-    aa (-1) = 1
-    aa 0 = (b gen 0)
-    aa num 
-      | num < 0 = undefined
-      | otherwise = (b gen (n+1)) * aa n + (a gen (n+1)) * aa (n-1) where 
-        n = num - 1
-
-    bb (-1) = 0
-    bb 0 = 1
-    bb num 
-      | num < 0 = undefined
-      | otherwise = (b gen (n+1)) * bb n + (a gen (n+1)) * bb (n-1) where
-        n = num - 1
 
 root2 = GenCF {a = const 1, b = (\x -> if x == 0 then 1 else 2)}
 
