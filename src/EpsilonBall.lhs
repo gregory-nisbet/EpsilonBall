@@ -1,3 +1,24 @@
+Design issues:
+
+Division is by far the hardest thing to get right conceptually.
+
+It is worth splitting division out from the multiplication class
+since division works differently for intervals and telescoping sequences of intervals.
+
+Another thorny issue is monotonicity.
+
+I'd like to devise a system in which every sequence of intervals is either
+a) constant
+b) monotonically shrinking
+
+and I would like to define operations on intervals (e.g. sin, cos, tan) in such a
+way that the constant-or-monotonically-shrinking property is preserved.
+
+Another design issue is printing things.
+
+The rule that is that types that implement Eq must have an invertible show function.
+Types that do not implement Eq need not have an invertible show function.
+
 > {-# LANGUAGE MultiParamTypeClasses #-}
 > {-# LANGUAGE FlexibleInstances #-}
 > {-# LANGUAGE TypeSynonymInstances #-}
@@ -24,13 +45,8 @@ Addable is essentially an Abelian group, but has more semantic content
 
 Mulable is a group, except that recp might fail.
 
-recp is split into recpFast which always returns something
-and recpSlow which performs a zero check
-
 > class Mulable a where
 >   mul :: a -> a -> a
->   recpFast :: a -> a
->   recpSlow :: a -> Maybe a
 >   one :: a
 
 Scalable captures the notion of allowing scalar multiplication
@@ -74,13 +90,6 @@ multiplication does require checking the bounds.
 >     min' = minimum xs
 >     max' = maximum xs
 >
->   recpFast x@(FlatRat low high) =
->     if contains (0 :: Rational) x then (FlatRat 0 0)
->                                   else FlatRat (recip high) (recip low)
->   recpSlow x@(FlatRat low high) =
->     if contains (0 :: Rational) x then Nothing
->                                    else Just (FlatRat (recip high) (recip low))
->
 >   one = FlatRat 1 1
 
 
@@ -123,11 +132,27 @@ It is okay to for this implementation of Show FlatRat to be in the Show typeclas
 rather than being a dedicated pretty-print function because the representation is lossless.
 
 > instance Show FlatRat where
->   show (FlatRat low high) = "FlatRat(" ++ show low ++ ", " ++ show high ++ ")"
+>   show (FlatRat low high) = "FlatRat(" ++ prettyPrintRat low ++ ", " ++ prettyPrintRat high ++ ")"
 
 > -- | Show FlatRat
 > -- >>> FlatRat (1/2) (3/4)
 > -- FlatRat(1 % 2, 3 % 4)
+
+In certain circumstances, we want a very compact representation of a
+FlatRat that mirrors math notation, i.e. [x, y] for the interval FlatRat(x, y).
+A degenerate interval is printed as just the number itself
+
+> prettyPrintFlatRat :: FlatRat -> String
+> prettyPrintFlatRat (FlatRat a b) =
+>   if a == b then lower else bracketed where
+>     bracketed = "[" ++ prettyPrintRat a ++ ", " ++ prettyPrintRat b ++ "]"
+>     lower     = prettyPrintRat a
+
+> -- | prettyPrintFlatRat
+> -- >>> putStrLn $ prettyPrintFlatRat $ FlatRat (1/2) (1/2)
+> -- 1 % 2
+> -- >>> putStrLn $ prettyPrintFlatRat $ FlatRat (-9) 13
+> -- [-9, 13]
 
 A RatIntervalSeq is a sequence of rational intervals.
 It cannot be directly compared for equality, but it can be added, multiplied and scaled.
@@ -157,16 +182,45 @@ Negation is implemented by negating the scalar.
 >   neg (RatIntervalSeq sc f) = (RatIntervalSeq (negate sc) f)
 >   zero = (RatIntervalSeq 0 (const zero))
 
-multiplication. recpFast and recpSlow not defined yet
+multiplication.
 
 > instance Mulable RatIntervalSeq where
 >   mul (RatIntervalSeq sc f) (RatIntervalSeq sc' f') =
 >     (RatIntervalSeq (sc * sc') (\n -> mul (f n) (f' n)))
->   recpFast = undefined
->   recpSlow = undefined
 >   one = (RatIntervalSeq 1 (const one))
 
 scalar multiplication.
 
 > instance Scalable Rational RatIntervalSeq where
 >   scale k (RatIntervalSeq sc f) = (RatIntervalSeq (k * sc) f)
+
+When show-ing a RatIntervalSeq, we arbitrarily pick the first three terms
+and then show an ellipsis afterwards, under the assumption that the first three terms
+are relatively cheap to compute.
+
+This representation is even lossier than it has to be
+because the underlying scalar multiple is obscured.
+
+A lossy printed representation is okay for this type because
+a) it includes an explicit ellipsis in the results, so a human would not be confused.
+b) a RatIntervalSeq very intentionally does not implement Eq
+
+Since the representation is lossy anyway, it is probably worth investigating whether
+to use floating point numbers instead of ratios.
+
+> instance Show RatIntervalSeq where
+>   show (RatIntervalSeq sc f) =
+>     out where
+>       out = "RIS(" ++ first ++ ", " ++ second ++ ", " ++ third ++ ", " ++ "..." ++ ")"
+>       first = prettyPrintFlatRat $ scale sc (f 1)
+>       second = prettyPrintFlatRat $ scale sc (f 2)
+>       third = prettyPrintFlatRat $ scale sc (f 3)
+
+Extremely simple test with the [0, 0] interval. This is just here to spot check some of
+the moving parts.
+
+> -- | Show RatIntervalSeq
+> -- >>> (zero :: RatIntervalSeq)
+> -- RIS(0, 0, 0, ...)
+
+
