@@ -1,6 +1,3 @@
-Doctests driver taken from
-https://www.reddit.com/r/haskell/comments/3zqv2e/using_doctestdiscover_with_stack/cyoaorg
-
 > module Main (main) where
 
 > import System.FilePath.Glob (glob)
@@ -31,8 +28,9 @@ the project root is really inelegant.
 >   showLhs >>
 >   printf "\n" >>
 >   (do
->     glob hs  >>= doctest
->     glob lhs >>= doctest)
+>     xs1 <- glob hs
+>     xs2 <- glob lhs
+>     doctest (xs1 ++ xs2))
 
 < import Test.DocTest
 < main = doctest ["./src/EpsilonBall.hs"]

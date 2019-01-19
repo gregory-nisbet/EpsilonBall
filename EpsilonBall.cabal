@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 08b4d3e26a458eca1d78bf76b3907bd3f308a04b11e009f38d3659073f542c48
+-- hash: e1753d3e3f0a2907d37399db8fc12f2496b331ae4bab1133888935320ea6c4b2
 
 name:           EpsilonBall
 version:        0.0.0
@@ -15,6 +15,7 @@ build-type:     Simple
 library
   exposed-modules:
       EpsilonBall
+      EpsilonBallOld
   other-modules:
       Paths_EpsilonBall
   hs-source-dirs:
@@ -32,6 +33,7 @@ test-suite doctest
   main-is: doctests.lhs
   other-modules:
       EpsilonBall
+      EpsilonBallOld
       Paths_EpsilonBall
   hs-source-dirs:
       src
