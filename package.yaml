@@ -1,0 +1,19 @@
+name: "EpsilonBall"
+
+library:
+  source-dirs:
+    - "src"
+
+tests:
+  doctest:
+    main: "doctests.lhs"
+    source-dirs:
+      - "src"
+      - "test"
+
+dependencies:
+  - base
+  - containers
+  - filepath
+  - doctest
+  - Glob

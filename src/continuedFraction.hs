@@ -1,3 +1,5 @@
+module ContinuedFraction where
+
 import Data.Ratio (Rational)
 import qualified Data.Map as Map
 

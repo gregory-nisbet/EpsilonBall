@@ -1,4 +1,6 @@
-import Data.Natural
+module Eball where
+
+import Numeric.Natural
 import Control.Applicative
 
 {- The purpose of this module is to represent Approximate values.
