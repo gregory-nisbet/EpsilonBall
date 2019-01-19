@@ -206,7 +206,7 @@ a) it includes an explicit ellipsis in the results, so a human would not be conf
 b) a RatIntervalSeq very intentionally does not implement Eq
 
 Since the representation is lossy anyway, it is probably worth investigating whether
-to use floating point numbers instead of ratios.
+to print the numbers in decimal or not.
 
 > instance Show RatIntervalSeq where
 >   show (RatIntervalSeq sc f) =
@@ -223,4 +223,6 @@ the moving parts.
 > -- >>> (zero :: RatIntervalSeq)
 > -- RIS(0, 0, 0, ...)
 
+Generalized Continued Fractions are an important source of narrowing interval sequences.
 
+> data GenCF = GenCF {a :: Natural -> Integer, b :: Natural -> Integer}
