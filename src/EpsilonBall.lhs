@@ -8,8 +8,6 @@
 > import qualified Data.Map as Map
 > import Numeric.Natural (Natural)
 
-EBInterval
-
 An interval is logically a container, but its contents cannot be walked.
 Another good name for this concept would be "set".
 
@@ -92,4 +90,83 @@ scalar multiplication is straightforward
 >   scale k (FlatRat low high) | k >= 0 = (FlatRat (k * low) (k * high))
 >                              | otherwise = (FlatRat (k * high) (k * low))
 
+Pretty print a rational number. The pretty-printer does not detect malformed
+rational numbers. I don't know what kind of malformed-ness is ruled out by the
+Rational API.
 
+> prettyPrintRat :: Rational -> String
+> prettyPrintRat x = out where
+>   num = numerator x
+>   denom = denominator x
+>   f a b | a == 0 = "0"
+>         | b == 1 = show a
+>         | b == -1 = show (negate a)
+>         | otherwise = show x
+>   out = f num denom
+
+Check that a rational number is pretty printed correctly.
+
+> -- | Pretty Print Rat
+> -- >>> prettyPrintRat 0
+> -- "0"
+> -- >>> prettyPrintRat 1
+> -- "1"
+> -- >>> prettyPrintRat (-1)
+> -- "-1"
+> -- >>> prettyPrintRat (1/2)
+> -- "1 % 2"
+> -- >>> prettyPrintRat ((-1)/2)
+> -- "(-1) % 2"
+
+Print an individual FlatRat in the approximate style of an instance of a Python class.
+It is okay to for this implementation of Show FlatRat to be in the Show typeclass
+rather than being a dedicated pretty-print function because the representation is lossless.
+
+> instance Show FlatRat where
+>   show (FlatRat low high) = "FlatRat(" ++ show low ++ ", " ++ show high ++ ")"
+
+> -- | Show FlatRat
+> -- >>> FlatRat (1/2) (3/4)
+> -- FlatRat(1 % 2, 3 % 4)
+
+A RatIntervalSeq is a sequence of rational intervals.
+It cannot be directly compared for equality, but it can be added, multiplied and scaled.
+Scalar multiplication is constant time.
+
+Note, we can't actually identify rational interval sequences that
+are guaranteed to be finite.
+
+Consider restricting rational interval sequences so that they are either
+strictly narrowing or constant.
+
+A RatIntervalSeq is opaque, except for the scalar attached to it.
+
+> data RatIntervalSeq = RatIntervalSeq {
+>   rISScalar :: Rational,
+>   riSFunc   :: Natural -> FlatRat
+> }
+
+Addition related functions.
+Addition itself always produces a new normalized entity with 1 as the scalar.
+Negation is implemented by negating the scalar.
+
+> instance Addable RatIntervalSeq where
+>   add (RatIntervalSeq sc f) (RatIntervalSeq sc' f') =
+>     (RatIntervalSeq 1 (\ n -> (add (scale sc  (f  n))
+>                                    (scale sc' (f' n)))))
+>   neg (RatIntervalSeq sc f) = (RatIntervalSeq (negate sc) f)
+>   zero = (RatIntervalSeq 0 (const zero))
+
+multiplication. recpFast and recpSlow not defined yet
+
+> instance Mulable RatIntervalSeq where
+>   mul (RatIntervalSeq sc f) (RatIntervalSeq sc' f') =
+>     (RatIntervalSeq (sc * sc') (\n -> mul (f n) (f' n)))
+>   recpFast = undefined
+>   recpSlow = undefined
+>   one = (RatIntervalSeq 1 (const one))
+
+scalar multiplication.
+
+> instance Scalable Rational RatIntervalSeq where
+>   scale k (RatIntervalSeq sc f) = (RatIntervalSeq (k * sc) f)
