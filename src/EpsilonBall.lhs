@@ -29,6 +29,10 @@ Types that do not implement Eq need not have an invertible show function.
 > import qualified Data.Map as Map
 > import Numeric.Natural (Natural)
 
+Go ahead and import everything from the positive integer library.
+
+> import PositiveInteger
+
 An interval is logically a container, but its contents cannot be walked.
 Another good name for this concept would be "set".
 
@@ -225,4 +229,4 @@ the moving parts.
 
 Generalized Continued Fractions are an important source of narrowing interval sequences.
 
-> data GenCF = GenCF {a :: Natural -> Integer, b :: Natural -> Integer}
+> data GenCF = GenCF {a :: PositiveInteger -> Integer, b :: Natural -> Integer}
