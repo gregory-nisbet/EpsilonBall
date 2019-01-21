@@ -1,6 +1,6 @@
 Design issues:
 
-Division is by far the hardest thing to get right conceptually.
+ Division is by far the hardest thing to get right conceptually.
 
 It is worth splitting division out from the multiplication class
 since division works differently for intervals and telescoping sequences of intervals.

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 08b4d3e26a458eca1d78bf76b3907bd3f308a04b11e009f38d3659073f542c48
+-- hash: 99931071a3645aa2fdcebc89eea1c3a91fc1a613ed2337f339f91e3e98d16ebb
 
 name:           EpsilonBall
 version:        0.0.0
@@ -15,6 +15,7 @@ build-type:     Simple
 library
   exposed-modules:
       EpsilonBall
+      PositiveInteger
   other-modules:
       Paths_EpsilonBall
   hs-source-dirs:
@@ -32,6 +33,7 @@ test-suite doctest
   main-is: doctests.lhs
   other-modules:
       EpsilonBall
+      PositiveInteger
       Paths_EpsilonBall
   hs-source-dirs:
       src
