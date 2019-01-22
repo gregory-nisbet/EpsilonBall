@@ -1,6 +1,8 @@
 Design issues:
 
- Division is by far the hardest thing to get right conceptually.
+Division is by far the hardest thing to get right conceptually. The current plan
+is to have several different classes for division depending on exactly what guarantees
+are made.
 
 It is worth splitting division out from the multiplication class
 since division works differently for intervals and telescoping sequences of intervals.
@@ -19,6 +21,10 @@ Another design issue is printing things.
 The rule that is that types that implement Eq must have an invertible show function.
 Types that do not implement Eq need not have an invertible show function.
 
+Probably the final design issue is whether to expose the myriad typeclasses used to
+implement functionality here. I'm leaning towards "no" because this module does a fair
+amount of reinventing the wheel.
+
 > {-# LANGUAGE MultiParamTypeClasses #-}
 > {-# LANGUAGE FlexibleInstances #-}
 > {-# LANGUAGE TypeSynonymInstances #-}
@@ -29,31 +35,37 @@ Types that do not implement Eq need not have an invertible show function.
 > import qualified Data.Map as Map
 > import Numeric.Natural (Natural)
 
-Go ahead and import everything from the positive integer library.
+The PositiveInteger library is part of the same project. It is okay
+to simply import everything from it.
 
 > import PositiveInteger
 
 An interval is logically a container, but its contents cannot be walked.
-Another good name for this concept would be "set".
+This makes it the same sort of thing as a predicate.
 
 > class UntraversableContainer v a where
 >   contains :: v -> a -> Bool
 
 
-Addable is essentially an Abelian group, but has more semantic content
+Addable is essentially an Abelian group, but promises that the group
+operation is semantically similar to addition in some larger context.
 
 > class Addable a where
 >   add :: a -> a -> a
 >   neg :: a -> a
 >   zero :: a
 
-Mulable is a group, except that recp might fail.
+Mulable is a monoid. Many things are Addable and Mulable at the same time.
+Having a single type that is an Abelian Group one way and a Monoid in a completely
+different way is just confusing.
 
 > class Mulable a where
 >   mul :: a -> a -> a
 >   one :: a
 
-Scalable captures the notion of allowing scalar multiplication
+Scalable captures the notion of allowing scalar multiplication. The notion of
+scalar multiplication should be consistent with "repeated addition" from
+Addable. k, however, is potentially more general than just integers.
 
 > class Scalable k a where
 >   scale :: k -> a -> a
@@ -62,30 +74,32 @@ A "flat" rational interval consists of a lower and upper bound. The interval
 should be thought of as *closed*. In other words, the interval (1001) below
 contains both 4 and 5.
 
-Note that it is possible to create an invalid literal if the lower bound is
-greater than the upper bound
-
   FlatRat 4 5    (1001)
+
+Note that it is possible to create an invalid literal if the lower bound is
+greater than the upper bound. It might be worth hiding the FlatRat constructor
+to prevent consumers of this library from making ill-formed intervals.
 
 > data FlatRat = FlatRat {
 >   low :: Rational,
 >   high :: Rational
 > } deriving (Eq)
 
-Note that intervals are closed intervals. The alternative is possible but
-renders many more operations inexact.
+Note that intervals are closed intervals. If intervals were instead treated
+as open intervals then it would be difficult to represent singleton intervals.
+It might be worth having another type that distinguishes boundary type.
 
 > instance UntraversableContainer Rational FlatRat where
 >   contains k (FlatRat low high) = (low <= k) && (k <= high)
 
-rational intervals can be added together without checking the bounds.
+Rational intervals can be added together without checking the bounds.
 
 > instance Addable FlatRat where
 >   add (FlatRat a b) (FlatRat c d) = (FlatRat (a + c) (b + d))
 >   neg (FlatRat a b) = (FlatRat (negate b) (negate a))
 >   zero = (FlatRat 0 0)
 
-multiplication does require checking the bounds.
+Multiplication does require checking the bounds.
 
 > instance Mulable FlatRat where
 >   mul (FlatRat a b) (FlatRat c d) = out where
@@ -96,8 +110,8 @@ multiplication does require checking the bounds.
 >
 >   one = FlatRat 1 1
 
-
-scalar multiplication is straightforward
+Scalar multiplication is monotonic increasing if and only if the scalar is
+positive.
 
 > instance Scalable Rational FlatRat where
 >   scale k (FlatRat low high) | k >= 0 = (FlatRat (k * low) (k * high))
